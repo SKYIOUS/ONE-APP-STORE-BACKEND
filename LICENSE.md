@@ -36,7 +36,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ### Contact for Permissions:
 To request permission to use this software beyond the scope allowed above, please contact:
 - GitHub: [SKYIOUS Organization](https://github.com/SKYIOUS)
-- Email: [contact@example.com] (Replace with actual contact information)
+- Email: [infobystore.one@gmail.com]
 
 ---
 
