@@ -264,7 +264,9 @@ cd oneappstorebackend
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under a custom license based on the MIT License with additional restrictions - see the [LICENSE.md](LICENSE.md) file for details.
+
+The license requires explicit permission from SKYIOUS GitHub organization or any authorized administrator before using the software commercially or distributing it. Personal and educational use is freely permitted.
 
 ## Acknowledgments
 
