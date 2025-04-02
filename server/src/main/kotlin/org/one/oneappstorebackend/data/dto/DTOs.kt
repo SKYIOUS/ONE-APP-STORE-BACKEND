@@ -16,6 +16,8 @@ data class AppDto(
     val isFeatured: Boolean,
     val dateAdded: String,
     val lastUpdated: String,
+    val approvalStatus: String,
+    val submittedBy: String? = null,
     val ratings: Double? = null,
     val platforms: List<String> = emptyList()
 )
@@ -32,6 +34,8 @@ data class AppDetailDto(
     val isFeatured: Boolean,
     val dateAdded: String,
     val lastUpdated: String,
+    val approvalStatus: String,
+    val submittedBy: String? = null,
     val ratings: Double? = null,
     val reviews: List<ReviewDto> = emptyList(),
     val versions: List<AppVersionDto> = emptyList(),
@@ -46,7 +50,9 @@ data class AppVersionDto(
     val releaseNotes: String?,
     val releaseDate: String,
     val minOsVersion: String?,
-    val sizeBytes: Long?
+    val sizeBytes: Long?,
+    val approvalStatus: String,
+    val submittedBy: String? = null
 )
 
 @Serializable
@@ -86,7 +92,9 @@ data class UserDto(
     val username: String,
     val email: String,
     val dateRegistered: String,
-    val isAdmin: Boolean
+    val isAdmin: Boolean,
+    val isDeveloper: Boolean,
+    val githubUsername: String? = null
 )
 
 @Serializable
@@ -106,6 +114,82 @@ data class UserLoginDto(
 data class UserAuthResponseDto(
     val token: String,
     val user: UserDto
+)
+
+@Serializable
+data class GithubAuthRequestDto(
+    val code: String,
+    val redirectUri: String
+)
+
+@Serializable
+data class GithubUserDto(
+    val id: String,
+    val login: String,
+    val name: String?,
+    val email: String?,
+    val avatarUrl: String?
+)
+
+@Serializable
+data class TokenRefreshRequestDto(
+    val refreshToken: String
+)
+
+@Serializable
+data class TokenRefreshResponseDto(
+    val accessToken: String,
+    val expiresIn: Long
+)
+
+@Serializable
+data class AppApprovalDto(
+    val appId: String,
+    val versionId: Int? = null,
+    val status: String,
+    val reviewNotes: String? = null
+)
+
+@Serializable
+data class AppApprovalHistoryDto(
+    val id: Int,
+    val appId: String,
+    val versionId: Int?,
+    val status: String,
+    val reviewedBy: String?,
+    val reviewerName: String?,
+    val reviewNotes: String?,
+    val timestamp: String
+)
+
+@Serializable
+data class AppSubmissionDto(
+    val appId: String,
+    val name: String,
+    val description: String,
+    val category: String,
+    val version: String,
+    val releaseNotes: String? = null,
+    val releaseDate: String,
+    val minOsVersion: String? = null,
+    val platforms: List<AppPlatformSubmissionDto>
+)
+
+@Serializable
+data class AppPlatformSubmissionDto(
+    val platformId: Int,
+    val downloadUrl: String,
+    val price: Double = 0.0
+)
+
+@Serializable
+data class AppVersionSubmissionDto(
+    val appId: String,
+    val version: String,
+    val releaseNotes: String? = null,
+    val releaseDate: String,
+    val minOsVersion: String? = null,
+    val platforms: List<AppPlatformSubmissionDto>
 )
 
 @Serializable

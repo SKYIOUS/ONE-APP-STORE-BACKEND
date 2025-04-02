@@ -20,8 +20,10 @@ import org.one.oneappstorebackend.data.dto.ApiResponse
 import org.one.oneappstorebackend.data.repositories.AppRepository
 import org.one.oneappstorebackend.data.repositories.UserRepository
 import org.one.oneappstorebackend.routes.configureRouting
-import org.one.oneappstorebackend.services.AuthService
+import org.one.oneappstorebackend.services.*
 import org.slf4j.LoggerFactory
+
+const val SERVER_PORT = 8080
 
 fun main() {
     val logger = LoggerFactory.getLogger("Application")
@@ -48,6 +50,9 @@ fun Application.module() {
     
     // Initialize services
     val authService = AuthService(userRepository)
+    val githubAuthService = GithubAuthService(userRepository)
+    val githubReleaseService = GithubReleaseService(appRepository, userRepository, githubAuthService)
+    val appApprovalService = AppApprovalService(appRepository, userRepository)
     
     // Configure content negotiation
     install(ContentNegotiation) {
@@ -99,6 +104,62 @@ fun Application.module() {
                 )
             }
         }
+        
+        jwt("developer") {
+            val jwtSecret = System.getenv("JWT_SECRET") ?: "default-jwt-secret-for-development"
+            val jwtIssuer = "one-app-store"
+            
+            realm = "One App Store API"
+            verifier(
+                JWT.require(Algorithm.HMAC256(jwtSecret))
+                    .withIssuer(jwtIssuer)
+                    .build()
+            )
+            
+            validate { credential ->
+                val isDeveloper = credential.payload.getClaim("isDeveloper").asBoolean() ?: false
+                if (credential.payload.getClaim("userId").asString() != "" && isDeveloper) {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
+            }
+            
+            challenge { _, _ ->
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ApiResponse<Unit>(success = false, message = "Developer access required")
+                )
+            }
+        }
+        
+        jwt("admin") {
+            val jwtSecret = System.getenv("JWT_SECRET") ?: "default-jwt-secret-for-development"
+            val jwtIssuer = "one-app-store"
+            
+            realm = "One App Store API"
+            verifier(
+                JWT.require(Algorithm.HMAC256(jwtSecret))
+                    .withIssuer(jwtIssuer)
+                    .build()
+            )
+            
+            validate { credential ->
+                val isAdmin = credential.payload.getClaim("isAdmin").asBoolean() ?: false
+                if (credential.payload.getClaim("userId").asString() != "" && isAdmin) {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
+            }
+            
+            challenge { _, _ ->
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ApiResponse<Unit>(success = false, message = "Admin access required")
+                )
+            }
+        }
     }
     
     // Configure status pages for error handling
@@ -114,7 +175,14 @@ fun Application.module() {
     
     // Configure routes
     logger.info("Configuring routes")
-    configureRouting(appRepository, userRepository, authService)
+    configureRouting(
+        appRepository = appRepository, 
+        userRepository = userRepository, 
+        authService = authService,
+        githubAuthService = githubAuthService,
+        githubReleaseService = githubReleaseService,
+        appApprovalService = appApprovalService
+    )
     
     logger.info("Server initialization complete")
 }

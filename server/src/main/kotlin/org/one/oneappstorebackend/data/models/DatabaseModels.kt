@@ -16,7 +16,11 @@ object Apps : IntIdTable() {
     val isFeatured = bool("is_featured").default(false)
     val dateAdded = timestamp("date_added").defaultExpression(CurrentTimestamp())
     val lastUpdated = timestamp("last_updated").defaultExpression(CurrentTimestamp())
+    val approvalStatus = varchar("approval_status", 20).default("PENDING")
+    val submittedBy = varchar("submitted_by", 50).nullable()
 }
+
+// App Status enumeration values: PENDING, APPROVED, REJECTED
 
 // App versions table
 object AppVersions : IntIdTable() {
@@ -26,6 +30,8 @@ object AppVersions : IntIdTable() {
     val releaseDate = date("release_date")
     val minOsVersion = varchar("min_os_version", 20).nullable()
     val sizeBytes = long("size_bytes").nullable()
+    val approvalStatus = varchar("approval_status", 20).default("PENDING")
+    val submittedBy = varchar("submitted_by", 50).nullable()
     
     init {
         uniqueIndex("app_version_idx", appId, version)
@@ -69,6 +75,24 @@ object Users : IntIdTable() {
     val passwordHash = varchar("password_hash", 255)
     val dateRegistered = timestamp("date_registered").defaultExpression(CurrentTimestamp())
     val isAdmin = bool("is_admin").default(false)
+    val isDeveloper = bool("is_developer").default(false)
+    
+    // GitHub OAuth fields
+    val githubId = varchar("github_id", 50).nullable().uniqueIndex()
+    val githubUsername = varchar("github_username", 100).nullable()
+    val githubAccessToken = varchar("github_access_token", 255).nullable()
+    val githubRefreshToken = varchar("github_refresh_token", 255).nullable()
+    val githubTokenExpiry = timestamp("github_token_expiry").nullable()
+}
+
+// App Approval History table
+object AppApprovalHistory : IntIdTable() {
+    val appId = varchar("app_id", 50).references(Apps.appId)
+    val versionId = integer("version_id").references(AppVersions.id).nullable()
+    val status = varchar("status", 20) // PENDING, APPROVED, REJECTED
+    val reviewedBy = varchar("reviewed_by", 50).references(Users.userId).nullable()
+    val reviewNotes = text("review_notes").nullable()
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
 }
 
 // User Installations table

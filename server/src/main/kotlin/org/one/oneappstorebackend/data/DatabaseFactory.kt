@@ -14,17 +14,28 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.count
 import org.slf4j.LoggerFactory
+import org.one.oneappstorebackend.data.tables.*
 
 object DatabaseFactory {
-    private val logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
+    private val logger = LoggerFactory.getLogger(this::class.java)
     
     fun init() {
+        logger.info("Initializing database")
+        
+        val jdbcUrl = System.getenv("JDBC_URL") ?: "jdbc:postgresql://db:5432/oneappstore"
+        val jdbcDriver = System.getenv("JDBC_DRIVER") ?: "org.postgresql.Driver"
+        val dbUser = System.getenv("DB_USER") ?: "postgres"
+        val dbPassword = System.getenv("DB_PASSWORD") ?: "postgres"
+        
+        logger.debug("Database connection info: $jdbcUrl, user: $dbUser")
+        
         try {
+            // Connect to database
             val config = HikariConfig().apply {
-                driverClassName = "org.postgresql.Driver"
-                jdbcUrl = System.getenv("JDBC_DATABASE_URL") ?: "jdbc:postgresql://localhost:5432/oneappstore"
-                username = System.getenv("JDBC_DATABASE_USERNAME") ?: "postgres"
-                password = System.getenv("JDBC_DATABASE_PASSWORD") ?: "postgres"
+                driverClassName = jdbcDriver
+                this.jdbcUrl = jdbcUrl
+                username = dbUser
+                password = dbPassword
                 maximumPoolSize = 10
                 isAutoCommit = false
                 transactionIsolation = "TRANSACTION_REPEATABLE_READ"
@@ -34,41 +45,48 @@ object DatabaseFactory {
             val dataSource = HikariDataSource(config)
             Database.connect(dataSource)
             
-            // Initialize database schema
+            logger.info("Database connected successfully")
+            
+            // Create tables
             transaction {
                 SchemaUtils.create(
-                    Apps,
-                    AppVersions,
-                    Platforms,
-                    AppPlatformSupport,
-                    Reviews,
-                    Users,
-                    UserInstallations,
-                    UserWishlist,
-                    CollectionsTable,
-                    CollectionApps,
-                    Notifications
+                    UsersTable,
+                    AppsTable, 
+                    AppVersionsTable,
+                    PlatformsTable,
+                    AppPlatformSupportTable,
+                    ReviewsTable,
+                    AppApprovalHistoryTable,
+                    GithubTokensTable
                 )
                 
-                // Insert initial platform data if not exists
-                if (Platforms.selectAll().count() == 0L) {
-                    listOf(
-                        "android" to "Android",
-                        "linux-deb" to "Linux (Debian)",
-                        "windows-exe" to "Windows"
-                    ).forEach { (name, displayName) ->
-                        Platforms.insert {
-                            it[Platforms.name] = name
-                            it[Platforms.displayName] = displayName
+                logger.info("Database tables created")
+                
+                // Initialize platforms if empty
+                if (PlatformsTable.selectAll().count() == 0L) {
+                    val platforms = listOf(
+                        PlatformEntity(id = 1, name = "windows", displayName = "Windows"),
+                        PlatformEntity(id = 2, name = "macos", displayName = "macOS"),
+                        PlatformEntity(id = 3, name = "linux", displayName = "Linux"),
+                        PlatformEntity(id = 4, name = "android", displayName = "Android"),
+                        PlatformEntity(id = 5, name = "ios", displayName = "iOS"),
+                        PlatformEntity(id = 6, name = "web", displayName = "Web")
+                    )
+                    
+                    platforms.forEach { platform ->
+                        PlatformsTable.insert {
+                            it[id] = platform.id
+                            it[name] = platform.name
+                            it[displayName] = platform.displayName
                         }
                     }
+                    
+                    logger.info("Initialized platforms: ${platforms.size} entries")
                 }
             }
-            logger.info("Database initialized successfully")
         } catch (e: Exception) {
             logger.error("Failed to initialize database: ${e.message}", e)
-            logger.warn("Application will start, but database functionality will be unavailable")
-            // Allows the server to start even if the database is not available
+            throw e
         }
     }
     
@@ -79,4 +97,11 @@ object DatabaseFactory {
             logger.error("Database query failed: ${e.message}", e)
             throw e
         }
-} 
+}
+
+// Helper data class for platform initialization
+data class PlatformEntity(
+    val id: Int,
+    val name: String,
+    val displayName: String
+) 
