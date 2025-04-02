@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.one.oneappstorebackend.data.models.*
+import org.one.oneappstorebackend.data.models.Collections as CollectionsTable
 import java.util.*
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.insert
@@ -44,7 +45,7 @@ object DatabaseFactory {
                     Users,
                     UserInstallations,
                     UserWishlist,
-                    Collections,
+                    CollectionsTable,
                     CollectionApps,
                     Notifications
                 )

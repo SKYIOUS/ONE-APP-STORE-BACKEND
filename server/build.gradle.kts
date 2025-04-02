@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.ktor)
+    kotlin("plugin.serialization") version "1.9.22"
     application
 }
 
@@ -11,6 +12,19 @@ application {
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=${extra["io.ktor.development"] ?: "false"}")
 }
 
+// Configure JAR to be executable with main class attribute
+tasks.jar {
+    manifest {
+        attributes(
+            mapOf(
+                "Main-Class" to application.mainClass.get(),
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version
+            )
+        )
+    }
+}
+
 dependencies {
     // Core Ktor
     implementation(libs.logback)
@@ -18,13 +32,13 @@ dependencies {
     implementation(libs.ktor.server.netty)
     
     // Additional Ktor features
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.7")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
-    implementation("io.ktor:ktor-server-cors:2.3.7")
-    implementation("io.ktor:ktor-server-auth:2.3.7")
-    implementation("io.ktor:ktor-server-auth-jwt:2.3.7")
-    implementation("io.ktor:ktor-server-status-pages:2.3.7")
-    implementation("io.ktor:ktor-server-swagger:2.3.7")
+    implementation("io.ktor:ktor-server-content-negotiation:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-server-cors:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-server-auth:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-server-auth-jwt:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-server-status-pages:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-server-swagger:${libs.versions.ktor.get()}")
     
     // Database
     implementation("org.jetbrains.exposed:exposed-core:0.44.0")
@@ -40,7 +54,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
     
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("ch.qos.logback:logback-classic:${libs.versions.logback.get()}")
     
     // Testing
     testImplementation(libs.ktor.server.tests)
