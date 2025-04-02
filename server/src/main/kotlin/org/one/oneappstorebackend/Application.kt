@@ -20,10 +20,8 @@ import org.one.oneappstorebackend.data.dto.ApiResponse
 import org.one.oneappstorebackend.data.repositories.AppRepository
 import org.one.oneappstorebackend.data.repositories.UserRepository
 import org.one.oneappstorebackend.routes.configureRouting
-import org.one.oneappstorebackend.services.*
+import org.one.oneappstorebackend.services.AuthService
 import org.slf4j.LoggerFactory
-
-const val SERVER_PORT = 8080
 
 fun main() {
     val logger = LoggerFactory.getLogger("Application")
@@ -50,9 +48,6 @@ fun Application.module() {
     
     // Initialize services
     val authService = AuthService(userRepository)
-    val githubAuthService = GithubAuthService(userRepository)
-    val githubReleaseService = GithubReleaseService(appRepository, userRepository, githubAuthService)
-    val appApprovalService = AppApprovalService(appRepository, userRepository)
     
     // Configure content negotiation
     install(ContentNegotiation) {
@@ -175,14 +170,7 @@ fun Application.module() {
     
     // Configure routes
     logger.info("Configuring routes")
-    configureRouting(
-        appRepository = appRepository, 
-        userRepository = userRepository, 
-        authService = authService,
-        githubAuthService = githubAuthService,
-        githubReleaseService = githubReleaseService,
-        appApprovalService = appApprovalService
-    )
+    configureRouting(appRepository, userRepository, authService)
     
     logger.info("Server initialization complete")
 }

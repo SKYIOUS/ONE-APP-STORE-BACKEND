@@ -15,6 +15,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.count
 import org.slf4j.LoggerFactory
 import org.one.oneappstorebackend.data.tables.*
+import java.net.URI
 
 object DatabaseFactory {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -24,16 +25,21 @@ object DatabaseFactory {
         
         val jdbcUrl = System.getenv("JDBC_URL") ?: "jdbc:postgresql://db:5432/oneappstore"
         val jdbcDriver = System.getenv("JDBC_DRIVER") ?: "org.postgresql.Driver"
-        val dbUser = System.getenv("DB_USER") ?: "postgres"
-        val dbPassword = System.getenv("DB_PASSWORD") ?: "postgres"
         
-        logger.debug("Database connection info: $jdbcUrl, user: $dbUser")
+        // Handle both standard JDBC URLs and Render's postgres:// format
+        val (url, user, password) = parseJdbcUrl(jdbcUrl)
+        
+        // Use parsed values or fallback to environment variables
+        val dbUser = System.getenv("DB_USER") ?: user ?: "postgres"
+        val dbPassword = System.getenv("DB_PASSWORD") ?: password ?: "postgres"
+        
+        logger.debug("Database connection info: $url, user: $dbUser")
         
         try {
             // Connect to database
             val config = HikariConfig().apply {
                 driverClassName = jdbcDriver
-                this.jdbcUrl = jdbcUrl
+                this.jdbcUrl = url
                 username = dbUser
                 password = dbPassword
                 maximumPoolSize = 10
@@ -87,6 +93,30 @@ object DatabaseFactory {
         } catch (e: Exception) {
             logger.error("Failed to initialize database: ${e.message}", e)
             throw e
+        }
+    }
+    
+    /**
+     * Parses JDBC URL in either standard format or Render's postgres:// format
+     * @return Triple of (jdbcUrl, username, password)
+     */
+    private fun parseJdbcUrl(jdbcUrl: String): Triple<String, String?, String?> {
+        return if (jdbcUrl.startsWith("postgres://")) {
+            // Parse Render style postgres:// URL
+            val uri = URI(jdbcUrl)
+            val userInfo = uri.userInfo?.split(":")
+            val host = uri.host
+            val port = if (uri.port > 0) uri.port else 5432
+            val database = uri.path.removePrefix("/")
+            
+            val username = userInfo?.getOrNull(0)
+            val password = userInfo?.getOrNull(1)
+            val jdbcPostgresUrl = "jdbc:postgresql://$host:$port/$database"
+            
+            Triple(jdbcPostgresUrl, username, password)
+        } else {
+            // Already in JDBC format
+            Triple(jdbcUrl, null, null)
         }
     }
     
